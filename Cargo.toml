@@ -1,0 +1,9 @@
+[package]
+name = "frutta"
+version = "0.1.0"
+edition = "2021"
+
+authors = ["dario lehy <dario.lehy@ik.me>"]
+
+[dependencies]
+parser = {path = "./parser"}

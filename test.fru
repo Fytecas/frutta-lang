@@ -1,0 +1,7 @@
+import sys
+
+let i = 3 // = var i: number = 3;
+
+fn test() {
+    sys.print(i)
+}
