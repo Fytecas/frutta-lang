@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 fn main() {
-    const INPUT: &str = "let number = 42 print(number)";
+    const INPUT: &str = "let number = 42 print(number) number = 24 print(number)";
     let start = Instant::now();
     let expr = parser::Parser::parse(INPUT);
     println!("{:#?}", expr);

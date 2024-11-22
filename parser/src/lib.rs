@@ -12,6 +12,7 @@ pub struct Parser {
     pub input: String,
     pub pos: usize,
     pub current_token: Option<tokens::Token>,
+    pub next_token: Option<tokens::Token>,
 }
 
 impl Parser {
@@ -21,7 +22,8 @@ impl Parser {
         let mut parser = Parser {
             input: input.to_string(),
             pos: 0,
-            current_token: None
+            current_token: None,
+            next_token: None,
         };
         parser.next_token();
         let mut statements = vec![];
@@ -41,6 +43,16 @@ impl Parser {
             self.current_token = Some(token);
         } else {
             self.current_token = None;
+        }
+        self.next_token = self.get_next_token();
+    }
+
+    fn get_next_token(&mut self) -> Option<tokens::Token> {
+        let result = tokens::Token::tokenize_first(&self.input[self.pos..]);
+        if let Some((token, _)) = result {
+            Some(token)
+        } else {
+            None
         }
     }
 

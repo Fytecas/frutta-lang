@@ -97,10 +97,8 @@ impl Parser {
 
     pub fn parse_accessors(&mut self) -> Result<Expr, Error> {
         let mut lhs = self.parse_factor()?;
-        println!("{:?} hello", self.current_token);
         while let Some(tokens::Token::Point) = &self.current_token {
             self.next_token();
-            println!("{:?} hello", self.current_token);
             let rhs = self.parse_factor()?;
             lhs = Expr::Acessor(vec![lhs, rhs]);
         }

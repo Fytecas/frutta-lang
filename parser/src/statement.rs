@@ -1,7 +1,8 @@
 use crate::{
     errors::{self, Error},
     expr::Expr,
-    tokens, Parser,
+    tokens,
+    Parser,
 };
 
 #[derive(Debug, PartialEq)]
@@ -15,6 +16,8 @@ pub enum Statement {
         params: Vec<String>,
         body: Vec<Statement>,
     },
+    /// Variable assignment
+    Assign(String, Expr),
 }
 
 impl Parser {
@@ -35,6 +38,9 @@ impl Parser {
             "let" => self.parse_let(),
             "fn" => self.parse_fn(),
             "return" => self.parse_return(),
+            _ if matches!(self.next_token, Some(tokens::Token::Assign)) => {
+                self.parse_assign(key)
+            }
             _ => self.parse_expr().map(Statement::Expr),
         }
     }
@@ -134,5 +140,12 @@ impl Parser {
         self.next_token();
         let expr = self.parse_expr()?;
         Ok(Statement::Return(expr))
+    }
+
+    fn parse_assign(&mut self, name: String) -> Result<Statement, Error> {
+        self.next_token();
+        self.next_token();
+        let value = self.parse_expr()?;
+        Ok(Statement::Assign(name, value))
     }
 }
