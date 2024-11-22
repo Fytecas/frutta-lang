@@ -16,6 +16,9 @@ pub enum Token {
     Comma,
     Point,
     SemiColon,
+    GreaterThan,
+    LessThan,
+    Equal,
     Identifier(String),
 }
 // TODO: Add String, Boolean, and None
@@ -31,10 +34,19 @@ impl Token {
             return match char {
                 '+' => (Token::Plus, chars.as_str()),
                 ',' => (Token::Comma, chars.as_str()),
-                '=' => (Token::Assign, chars.as_str()),
+                '=' => {
+                    if let Some('=') = chars.as_str().chars().next() {
+                        chars.next();
+                        (Token::Equal, chars.as_str())
+                    } else {
+                        (Token::Assign, chars.as_str())
+                    }
+                },
                 '.' => (Token::Point, chars.as_str()),
                 '{' => (Token::LBrace, chars.as_str()),
                 '}' => (Token::RBrace, chars.as_str()),
+                '<' => (Token::LessThan, chars.as_str()),
+                '>' => (Token::GreaterThan, chars.as_str()),
                 ';' => (Token::SemiColon, chars.as_str()),
                 '-' => (Token::Minus, chars.as_str()),
                 '*' => (Token::Star, chars.as_str()),
