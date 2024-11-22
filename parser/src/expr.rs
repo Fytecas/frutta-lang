@@ -99,6 +99,7 @@ impl Parser {
         let mut lhs = self.parse_factor()?;
         while let Some(tokens::Token::Point) = &self.current_token {
             self.next_token();
+
             let rhs = self.parse_factor()?;
             lhs = Expr::Acessor(vec![lhs, rhs]);
         }
@@ -141,10 +142,17 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
+    use tokens::Token;
+
     use super::*;
 
     fn parse(input: &str) -> Result<Expr, Error> {
-        Parser::parse(input)
+        Parser {
+            input: input.to_string(),
+            pos: 0,
+            current_token: None,
+            next_token: None,
+        }.parse_expr()
     }
 
     #[test]
