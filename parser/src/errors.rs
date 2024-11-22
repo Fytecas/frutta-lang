@@ -53,8 +53,8 @@ impl Debug for Error {
             column_number
         );
 
-        let input_line = self.input.lines().nth(self.pos).unwrap_or(&self.input);
-        let marker_line = "-".repeat(self.pos-1);
+        let input_line = self.input.lines().nth(line_number - 1).unwrap_or(&self.input);
+        let marker_line = "-".repeat(column_number-1);
 
         error_message.push_str(&format!(
             "| {}\n| {}{}",

@@ -72,6 +72,7 @@ impl Token {
                     (Token::Identifier(id), chars.as_str())
                 }
                 ' ' => continue,
+                '\n' => continue,
                 _ => panic!("Unexpected character: {}", char),
             }.into();
         }

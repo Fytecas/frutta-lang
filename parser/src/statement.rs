@@ -5,9 +5,9 @@ use crate::{
     Parser,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
-    Let(Expr, Expr),
+    Let(String, Expr),
     Return(Expr),
     Expr(Expr),
     Block(Vec<Statement>),
@@ -47,11 +47,13 @@ impl Parser {
 
     pub fn parse_let(&mut self) -> Result<Statement, Error> {
         self.next_token();
-        let name = self.parse_expr()?;
-
-        if !matches!(name, Expr::Identifier(_)) && !matches!(name, Expr::Acessor(_)){
-            return Err(self.error(errors::ErrorType::ExpectedToken(tokens::Token::Identifier("".into()))));
-        }
+        let name = if let Expr::Identifier(name) = self.parse_expr()? {
+            name
+        } else {
+            return Err(self.error(errors::ErrorType::ExpectedToken(tokens::Token::Identifier(
+                "".into(),
+            ))));
+        };
 
         if self.current_token != Some(tokens::Token::Assign) {
             return Err(self.error(errors::ErrorType::ExpectedToken(tokens::Token::Assign)));
@@ -65,7 +67,6 @@ impl Parser {
 
     pub fn parse_fn(&mut self) -> Result<Statement, Error> {
         self.next_token();
-
         let name = match &self.current_token {
             Some(tokens::Token::Identifier(name)) => name.clone(),
             _ => {
@@ -133,6 +134,7 @@ impl Parser {
         while self.current_token != Some(tokens::Token::RBrace) {
             statements.push(self.parse_statement()?);
         }
+        self.next_token();
         Ok(statements)
     }
 

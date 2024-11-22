@@ -1,0 +1,8 @@
+[package]
+name = "vm"
+version = "0.1.0"
+edition = "2021"
+description = "A simple virtual machine for executing frutta language bytecode or AST(in interpreter mode)"
+
+[dependencies]
+parser = {path = "../parser"}

@@ -8,7 +8,8 @@ authors = ["dario lehy <dario.lehy@ik.me>"]
 [workspace]
 members = [
     "parser"
-]
+, "vm"]
 
 [dependencies]
 parser = {path = "./parser"}
+vm = {path = "vm" }

@@ -17,6 +17,7 @@ name = "frutta"
 version = "0.1.0"
 dependencies = [
  "parser",
+ "vm",
 ]
 
 [[package]]
@@ -30,6 +31,13 @@ name = "parser"
 version = "0.1.0"
 dependencies = [
  "colored",
+]
+
+[[package]]
+name = "vm"
+version = "0.1.0"
+dependencies = [
+ "parser",
 ]
 
 [[package]]
