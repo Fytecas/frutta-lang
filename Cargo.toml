@@ -13,3 +13,6 @@ members = [
 [dependencies]
 parser = {path = "./parser"}
 vm = {path = "vm" }
+
+[profile.dev]
+opt-level = 1

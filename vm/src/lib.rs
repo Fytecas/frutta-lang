@@ -11,69 +11,71 @@ pub struct VM {
 
 impl VM {
     pub fn new() -> Self {
-        let mut vm = VM {
-            classes: Rc::new(RefCell::new(HashMap::new())),
+        let classes = Rc::new(RefCell::new(HashMap::new()));
+        VM::init_builtin_classes(&classes);
+
+        let vm = VM {
+            classes: classes,
             variables: Rc::new(RefCell::new(HashMap::new())),
         };
-        vm.init_builtin_classes();
         vm
     }
 
-    fn init_builtin_classes(&mut self) {
+    fn init_builtin_classes(classes: &Rc<RefCell<HashMap<String, Class>>>) {
         let number_class = Class {
             name: "Number".to_string(),
             methods: {
                 let mut methods = HashMap::new();
-                methods.insert("Add".to_string(), Function::Builtin(|args| {
+                methods.insert(MagicMethod::Add, Function::Builtin(|args| {
                     if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
                         Value::Number(lhs + rhs)
                     } else {
                         unimplemented!()
                     }
                 }));
-                methods.insert("Sub".to_string(), Function::Builtin(|args| {
+                methods.insert(MagicMethod::Sub, Function::Builtin(|args| {
                     if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
                         Value::Number(lhs - rhs)
                     } else {
                         unimplemented!()
                     }
                 }));
-                methods.insert("Mul".to_string(), Function::Builtin(|args| {
+                methods.insert(MagicMethod::Mul, Function::Builtin(|args| {
                     if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
                         Value::Number(lhs * rhs)
                     } else {
                         unimplemented!()
                     }
                 }));
-                methods.insert("Div".to_string(), Function::Builtin(|args| {
+                methods.insert(MagicMethod::Div, Function::Builtin(|args| {
                     if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
                         Value::Number(lhs / rhs)
                     } else {
                         unimplemented!()
                     }
                 }));
-                methods.insert("Equal".to_string(), Function::Builtin(|args| {
+                methods.insert(MagicMethod::Equal, Function::Builtin(|args| {
                     if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
                         Value::Boolean(lhs == rhs)
                     } else {
                         unimplemented!()
                     }
                 }));
-                methods.insert("NotEqual".to_string(), Function::Builtin(|args| {
+                methods.insert(MagicMethod::NotEqual, Function::Builtin(|args| {
                     if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
                         Value::Boolean(lhs != rhs)
                     } else {
                         unimplemented!()
                     }
                 }));
-                methods.insert("GreaterThan".to_string(), Function::Builtin(|args| {
+                methods.insert(MagicMethod::GreaterThan, Function::Builtin(|args| {
                     if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
                         Value::Boolean(lhs > rhs)
                     } else {
                         unimplemented!()
                     }
                 }));
-                methods.insert("LessThan".to_string(), Function::Builtin(|args| {
+                methods.insert(MagicMethod::LessThan, Function::Builtin(|args| {
                     if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
                         Value::Boolean(lhs < rhs)
                     } else {
@@ -83,7 +85,7 @@ impl VM {
                 methods
             },
         };
-        self.classes.borrow_mut().insert("Number".to_string(), number_class);
+        classes.borrow_mut().insert("Number".to_string(), number_class);
     }
 
     pub fn exec_statement(&mut self, stmt: Statement) -> Option<Value> {
@@ -163,7 +165,7 @@ impl VM {
                 let function = self.eval_expr(*function);
                 if let Value::Function(function) = function {
                     let args = args.into_iter().map(|arg| self.eval_expr(arg)).collect();
-                    function.call(args, Rc::clone(&self.variables))
+                    function.call(args, Rc::clone(&self.variables), Rc::clone(&self.classes))
                 } else {
                     panic!("Attempted to call a non-function value");
                 }
@@ -178,23 +180,34 @@ impl VM {
                 let classes = self.classes.borrow();
                 let class = classes.get("Number").expect("Class 'Number' not found");
                 let method_name = match op {
-                    // TODO: implement the magic methods into a enum
-                    parser::tokens::Token::Plus => "Add",
-                    parser::tokens::Token::Minus => "Sub",
-                    parser::tokens::Token::Star => "Mul",
-                    parser::tokens::Token::Divider => "Div",
-                    parser::tokens::Token::Equal => "Equal",
-                    parser::tokens::Token::NotEqual => "NotEqual",
-                    parser::tokens::Token::GreaterThan => "GreaterThan",
-                    parser::tokens::Token::LessThan => "LessThan",
+                    parser::tokens::Token::Plus => MagicMethod::Add,
+                    parser::tokens::Token::Minus => MagicMethod::Sub,
+                    parser::tokens::Token::Star => MagicMethod::Mul,
+                    parser::tokens::Token::Divider => MagicMethod::Div,
+                    parser::tokens::Token::Equal => MagicMethod::Equal,
+                    parser::tokens::Token::NotEqual => MagicMethod::NotEqual,
+                    parser::tokens::Token::GreaterThan => MagicMethod::GreaterThan,
+                    parser::tokens::Token::LessThan => MagicMethod::LessThan,
                     _ => unimplemented!(),
                 };
-                let method = class.methods.get(method_name).expect(&format!("Method '{}' not found in class 'Number'", method_name));
-                method.call(vec![Value::Number(lhs), Value::Number(rhs)], Rc::clone(&self.variables))
+                let method = class.methods.get(&method_name).expect(&format!("Method '{:?}' not found in class 'Number'", method_name));
+                method.call(vec![Value::Number(lhs), Value::Number(rhs)], Rc::clone(&self.variables), Rc::clone(&self.classes))
             }
             _ => unimplemented!(),
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum MagicMethod {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Equal,
+    NotEqual,
+    GreaterThan,
+    LessThan,
 }
 
 #[derive(Debug, Clone)]
@@ -208,7 +221,7 @@ pub enum Value {
 #[derive(Debug)]
 pub struct Class {
     name: String,
-    methods: HashMap<String, Function>,
+    methods: HashMap<MagicMethod, Function>,
 }
 
 #[derive(Debug, Clone)]
@@ -229,7 +242,7 @@ pub enum Function {
 }
 
 impl Function {
-    pub fn call(&self, args: Vec<Value>, variables: Rc<RefCell<HashMap<String, Value>>>) -> Value {
+    pub fn call(&self, args: Vec<Value>, variables: Rc<RefCell<HashMap<String, Value>>>, classes: Rc<RefCell<HashMap<String, Class>>>) -> Value {
         match self {
             Function::Builtin(func) => func(args),
             Function::UserDefined { name, params, body, classes } => {
