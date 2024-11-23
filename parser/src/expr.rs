@@ -9,6 +9,7 @@ pub enum Expr {
     Number(f64),
     Boolean(bool),
     Identifier(String),
+    String(String),
     /// An Accessor is a way to access a value in a data structure.
     /// For example, in the expression `a.b.c`, `a` is the root, `b` is the first accessor, and `c` is the second accessor.
     /// We use expressions to represent accessors because they can also be used with numbers and other expressions. (e.g. `10.floor`)
@@ -103,6 +104,11 @@ impl Parser {
                     let rhs = self.parse_call()?;
                     lhs = self.binary_op(tokens::Token::Divider, lhs, rhs);
                 }
+                tokens::Token::Modulo => {
+                    self.next_token();
+                    let rhs = self.parse_call()?;
+                    lhs = self.binary_op(tokens::Token::Modulo, lhs, rhs);
+                }
                 _ => break,
             }
         }
@@ -145,6 +151,11 @@ impl Parser {
                 self.next_token();
                 let n = *n;
                 Ok(Expr::Number(n))
+            },
+            Some(tokens::Token::String(s)) => {
+                self.next_token();
+                let s = s.clone();
+                Ok(Expr::String(s))
             },
             Some(tokens::Token::Identifier(id)) => {
                 self.next_token();

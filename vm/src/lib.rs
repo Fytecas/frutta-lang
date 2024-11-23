@@ -2,11 +2,10 @@ pub mod std_;
 
 use parser::expr::Expr;
 use parser::statement::Statement;
-use std_::std_class;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::time::Instant;
+use std_::{std_class, time_class};
 
 pub struct VM {
     classes: Rc<RefCell<HashMap<String, Class>>>,
@@ -27,13 +26,22 @@ impl VM {
     fn init_builtin_classes(classes: &Rc<RefCell<HashMap<String, Class>>>) {
         let number_class = Class {
             name: "Number".to_string(),
-            fields: HashMap::new(),
+            fields: {
+                let mut fields = HashMap::new();
+                fields.insert(
+                    "value".to_string(),
+                    Rc::new(RefCell::new(Value::Number(0.0))),
+                );
+                fields
+            },
             magics: {
                 let mut methods = HashMap::new();
                 methods.insert(
                     MagicMethod::Add,
                     Function::Builtin(|args| {
-                        if let (Value::Number(lhs), Value::Number(rhs)) = (&*args[0].borrow(), &*args[1].borrow()) {
+                        if let (Value::Number(lhs), Value::Number(rhs)) =
+                            (&*args[0].borrow(), &*args[1].borrow())
+                        {
                             Value::Number(lhs + rhs)
                         } else {
                             unimplemented!()
@@ -43,7 +51,9 @@ impl VM {
                 methods.insert(
                     MagicMethod::Sub,
                     Function::Builtin(|args| {
-                        if let (Value::Number(lhs), Value::Number(rhs)) = (&*args[0].borrow(), &*args[1].borrow()) {
+                        if let (Value::Number(lhs), Value::Number(rhs)) =
+                            (&*args[0].borrow(), &*args[1].borrow())
+                        {
                             Value::Number(lhs - rhs)
                         } else {
                             unimplemented!()
@@ -53,7 +63,9 @@ impl VM {
                 methods.insert(
                     MagicMethod::Mul,
                     Function::Builtin(|args| {
-                        if let (Value::Number(lhs), Value::Number(rhs)) = (&*args[0].borrow(), &*args[1].borrow()) {
+                        if let (Value::Number(lhs), Value::Number(rhs)) =
+                            (&*args[0].borrow(), &*args[1].borrow())
+                        {
                             Value::Number(lhs * rhs)
                         } else {
                             unimplemented!()
@@ -63,7 +75,9 @@ impl VM {
                 methods.insert(
                     MagicMethod::Div,
                     Function::Builtin(|args| {
-                        if let (Value::Number(lhs), Value::Number(rhs)) = (&*args[0].borrow(), &*args[1].borrow()) {
+                        if let (Value::Number(lhs), Value::Number(rhs)) =
+                            (&*args[0].borrow(), &*args[1].borrow())
+                        {
                             Value::Number(lhs / rhs)
                         } else {
                             unimplemented!()
@@ -73,7 +87,9 @@ impl VM {
                 methods.insert(
                     MagicMethod::Equal,
                     Function::Builtin(|args| {
-                        if let (Value::Number(lhs), Value::Number(rhs)) = (&*args[0].borrow(), &*args[1].borrow()) {
+                        if let (Value::Number(lhs), Value::Number(rhs)) =
+                            (&*args[0].borrow(), &*args[1].borrow())
+                        {
                             Value::Boolean(lhs == rhs)
                         } else {
                             unimplemented!()
@@ -83,7 +99,9 @@ impl VM {
                 methods.insert(
                     MagicMethod::NotEqual,
                     Function::Builtin(|args| {
-                        if let (Value::Number(lhs), Value::Number(rhs)) = (&*args[0].borrow(), &*args[1].borrow()) {
+                        if let (Value::Number(lhs), Value::Number(rhs)) =
+                            (&*args[0].borrow(), &*args[1].borrow())
+                        {
                             Value::Boolean(lhs != rhs)
                         } else {
                             unimplemented!()
@@ -93,7 +111,9 @@ impl VM {
                 methods.insert(
                     MagicMethod::GreaterThan,
                     Function::Builtin(|args| {
-                        if let (Value::Number(lhs), Value::Number(rhs)) = (&*args[0].borrow(), &*args[1].borrow()) {
+                        if let (Value::Number(lhs), Value::Number(rhs)) =
+                            (&*args[0].borrow(), &*args[1].borrow())
+                        {
                             Value::Boolean(lhs > rhs)
                         } else {
                             unimplemented!()
@@ -103,7 +123,9 @@ impl VM {
                 methods.insert(
                     MagicMethod::LessThan,
                     Function::Builtin(|args| {
-                        if let (Value::Number(lhs), Value::Number(rhs)) = (&*args[0].borrow(), &*args[1].borrow()) {
+                        if let (Value::Number(lhs), Value::Number(rhs)) =
+                            (&*args[0].borrow(), &*args[1].borrow())
+                        {
                             Value::Boolean(lhs < rhs)
                         } else {
                             unimplemented!()
@@ -118,8 +140,14 @@ impl VM {
             .insert("Number".to_string(), number_class);
 
         let std_class = std_class();
-        classes.borrow_mut().insert(std_class.name.clone(), std_class);
-        }
+        classes
+            .borrow_mut()
+            .insert(std_class.name.clone(), std_class);
+
+        classes
+            .borrow_mut()
+            .insert("Time".to_string(), time_class());
+    }
 
     pub fn exec_statement(&mut self, stmt: Statement) -> Option<Rc<RefCell<Value>>> {
         match stmt {
@@ -179,7 +207,20 @@ impl VM {
 
     fn eval_expr(&self, expr: Expr) -> Rc<RefCell<Value>> {
         match expr {
-            Expr::Number(n) => Rc::new(RefCell::new(Value::Number(n))),
+            Expr::Number(n) => {
+                // // Create a new Number class instance
+                // let classes = self.classes.borrow();
+                // let class = classes.get("Number").unwrap_or_else(|| panic!("Class 'Number' not found"));
+                // let mut instance = ClassInstance {
+                //     name: class.name.clone(),
+                //     fields: class.fields.clone(),
+                // };
+                // // Set the value of the instance to the number
+                // instance.fields.insert("value".to_string(), Rc::new(RefCell::new(Value::Number(n))));
+
+                // Rc::new(RefCell::new(Value::ClassInstance(instance)))
+                Rc::new(RefCell::new(Value::Number(n)))
+            }
             Expr::Boolean(b) => Rc::new(RefCell::new(Value::Boolean(b))),
             Expr::Identifier(name) => {
                 self.variables
@@ -188,13 +229,15 @@ impl VM {
                     .cloned()
                     .unwrap_or_else(|| {
                         let classes = self.classes.borrow();
-                        let class = classes.get(&name).unwrap_or_else(|| panic!("Variable or class '{}' not found", name));
+                        let class = classes
+                            .get(&name)
+                            .unwrap_or_else(|| panic!("Variable or class '{}' not found", name));
                         Rc::new(RefCell::new(Value::ClassInstance(ClassInstance {
                             name: class.name.clone(),
                             fields: class.fields.clone(),
                         })))
                     })
-            },
+            }
             Expr::BinaryOp { op, lhs, rhs } => {
                 let lhs = self.eval_expr(*lhs);
                 let rhs = self.eval_expr(*rhs);
@@ -203,22 +246,22 @@ impl VM {
             Expr::Acessor(accessors) => {
                 let mut iter = accessors.into_iter();
                 let origin = self.eval_expr(iter.next().unwrap());
-                
-                iter.fold(origin, |acc, accessor| {
-                    match &*acc.borrow() {
-                        Value::ClassInstance(instance) => {
-                            let field_name = match accessor {
-                                Expr::Identifier(name) => name,
-                                _ => panic!("Invalid accessor expression"),
-                            };
-                            instance.fields.get(&field_name)
-                                .cloned()
-                                .unwrap_or_else(|| panic!("Field '{}' not found", field_name))
-                        },
-                        _ => panic!("Attempted to access a field on a non-class instance value"),
+
+                iter.fold(origin, |acc, accessor| match &*acc.borrow() {
+                    Value::ClassInstance(instance) => {
+                        let field_name = match accessor {
+                            Expr::Identifier(name) => name,
+                            _ => panic!("Invalid accessor expression"),
+                        };
+                        instance
+                            .fields
+                            .get(&field_name)
+                            .cloned()
+                            .unwrap_or_else(|| panic!("Field '{}' not found", field_name))
                     }
+                    _ => panic!("Attempted to access a field on a non-class instance value"),
                 })
-            },
+            }
             Expr::Call(function, args) => {
                 let function = self.eval_expr(*function);
                 let args = args.into_iter().map(|arg| self.eval_expr(arg)).collect();
@@ -229,36 +272,58 @@ impl VM {
                     panic!("Attempted to call a non-function value");
                 }
             }
+            Expr::String(s) => Rc::new(RefCell::new(Value::String(s))),
             _ => unimplemented!(),
         }
     }
 
-    fn eval_binary_op(&self, op: parser::tokens::Token, lhs: Rc<RefCell<Value>>, rhs: Rc<RefCell<Value>>) -> Rc<RefCell<Value>> {
-        match (&*lhs.borrow(), &*rhs.borrow()) {
-            (Value::Number(_), Value::Number(_)) => {
+    fn eval_binary_op(
+        &self,
+        op: parser::tokens::Token,
+        lhs: Rc<RefCell<Value>>,
+        rhs: Rc<RefCell<Value>>,
+    ) -> Rc<RefCell<Value>> {
+        let magic = match op {
+            parser::tokens::Token::Plus => MagicMethod::Add,
+            parser::tokens::Token::Minus => MagicMethod::Sub,
+            parser::tokens::Token::Star => MagicMethod::Mul,
+            parser::tokens::Token::Divider => MagicMethod::Div,
+            parser::tokens::Token::Equal => MagicMethod::Equal,
+            parser::tokens::Token::NotEqual => MagicMethod::NotEqual,
+            parser::tokens::Token::GreaterThan => MagicMethod::GreaterThan,
+            parser::tokens::Token::LessThan => MagicMethod::LessThan,
+            _ => unimplemented!(),
+        };
+        let lhs_value = lhs.borrow().clone();
+        let rhs_value = rhs.borrow().clone();
+
+        match (&lhs_value, &rhs_value) {
+            (Value::ClassInstance(class), Value::ClassInstance(_)) => {
                 let classes = self.classes.borrow();
-                let class = classes.get("Number").expect("Class 'Number' not found");
-                let method_name = match op {
-                    parser::tokens::Token::Plus => MagicMethod::Add,
-                    parser::tokens::Token::Minus => MagicMethod::Sub,
-                    parser::tokens::Token::Star => MagicMethod::Mul,
-                    parser::tokens::Token::Divider => MagicMethod::Div,
-                    parser::tokens::Token::Equal => MagicMethod::Equal,
-                    parser::tokens::Token::NotEqual => MagicMethod::NotEqual,
-                    parser::tokens::Token::GreaterThan => MagicMethod::GreaterThan,
-                    parser::tokens::Token::LessThan => MagicMethod::LessThan,
-                    _ => unimplemented!(),
-                };
-                let method = class.magics.get(&method_name).expect(&format!(
-                    "Method '{:?}' not found in class 'Number'",
-                    method_name
-                ));
+                let lhs_class = classes.get(&class.name).unwrap();
+                let method = lhs_class.magics.get(&magic).unwrap();
                 method.call(
-                    vec![Rc::clone(&lhs), Rc::clone(&rhs)],
+                    vec![lhs, rhs],
                     Rc::clone(&self.variables),
                     Rc::clone(&self.classes),
                 )
             }
+            (Value::Number(lhs), Value::Number(rhs)) => match magic {
+                MagicMethod::Add => Rc::new(RefCell::new(Value::Number(lhs + rhs))),
+                MagicMethod::Sub => Rc::new(RefCell::new(Value::Number(lhs - rhs))),
+                MagicMethod::Mul => Rc::new(RefCell::new(Value::Number(lhs * rhs))),
+                MagicMethod::Div => Rc::new(RefCell::new(Value::Number(lhs / rhs))),
+                MagicMethod::Equal => Rc::new(RefCell::new(Value::Boolean(lhs == rhs))),
+                MagicMethod::NotEqual => Rc::new(RefCell::new(Value::Boolean(lhs != rhs))),
+                MagicMethod::GreaterThan => Rc::new(RefCell::new(Value::Boolean(lhs > rhs))),
+                MagicMethod::LessThan => Rc::new(RefCell::new(Value::Boolean(lhs < rhs))),
+            },
+            (Value::String(lhs), Value::String(rhs)) => match magic {
+                MagicMethod::Add => Rc::new(RefCell::new(Value::String(format!("{}{}", lhs, rhs)))),
+                MagicMethod::Equal => Rc::new(RefCell::new(Value::Boolean(lhs == rhs))),
+                MagicMethod::NotEqual => Rc::new(RefCell::new(Value::Boolean(lhs != rhs))),
+                _ => unimplemented!(),
+            },
             _ => unimplemented!(),
         }
     }
@@ -280,12 +345,50 @@ pub enum MagicMethod {
 pub enum Value {
     None,
     Number(f64),
+    String(String),
     Boolean(bool),
     ClassInstance(ClassInstance),
     Function(Function),
 }
 
-#[derive(Debug)]
+// as_number, as_string, as_boolean
+impl Value {
+    pub fn as_number(&self) -> Option<f64> {
+        match self {
+            Value::Number(n) => Some(*n),
+            _ => None,
+        }
+    }
+
+    pub fn as_string(&self) -> Option<&String> {
+        match self {
+            Value::String(s) => Some(s),
+            _ => None,
+        }
+    }
+
+    pub fn as_boolean(&self) -> Option<bool> {
+        match self {
+            Value::Boolean(b) => Some(*b),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::None => write!(f, "None"),
+            Value::Number(n) => write!(f, "{}", n),
+            Value::String(s) => write!(f, "{}", s),
+            Value::Boolean(b) => write!(f, "{}", b),
+            Value::ClassInstance(instance) => write!(f, "{:?}", instance),
+            Value::Function(_) => write!(f, "<function>")
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Class {
     name: String,
     magics: HashMap<MagicMethod, Function>,
@@ -301,10 +404,20 @@ impl Class {
         }
     }
 
-    pub fn add_method(&mut self, name: &str, function: fn(Vec::<Rc<RefCell<Value>>>) -> Value) {
+    pub fn add_method(&mut self, name: &str, function: fn(Vec<Rc<RefCell<Value>>>) -> Value) {
         let method = Function::Builtin(function);
         let method = Rc::new(RefCell::new(Value::Function(method)));
         self.fields.insert(name.to_string(), method);
+    }
+
+    pub fn add_field<T, F>(&mut self, name: &str, value: T, f: F)
+    where
+        T: Into<Value>,
+        F: Fn(&Value) -> bool,
+    {
+        let value = value.into();
+        let value = Rc::new(RefCell::new(value));
+        self.fields.insert(name.to_string(), value);
     }
 }
 
@@ -345,7 +458,10 @@ impl Function {
                     local_variables.insert(param.clone(), Rc::clone(arg));
                 }
                 // Insert the function into the variables so it can be called recursively
-                local_variables.insert(name.to_string(), Rc::new(RefCell::new(Value::Function(self.clone()))));
+                local_variables.insert(
+                    name.to_string(),
+                    Rc::new(RefCell::new(Value::Function(self.clone()))),
+                );
                 let mut vm = VM {
                     classes: Rc::clone(classes),
                     variables: Rc::new(RefCell::new(local_variables)),
@@ -355,7 +471,7 @@ impl Function {
                         return return_value;
                     }
                 }
-                Rc::new(RefCell::new(Value::Number(0.0)))
+                Rc::new(RefCell::new(Value::None))
             }
         }
     }

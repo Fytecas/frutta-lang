@@ -20,6 +20,8 @@ pub enum Token {
     LessThan,
     NotEqual,
     Equal,
+    Modulo,
+    String(String),
     Identifier(String),
 }
 // TODO: Add String, Boolean, and None
@@ -52,6 +54,7 @@ impl Token {
                     }
                 },
                 '.' => (Token::Point, chars.as_str()),
+                '%' => (Token::Modulo, chars.as_str()),
                 '{' => (Token::LBrace, chars.as_str()),
                 '}' => (Token::RBrace, chars.as_str()),
                 '<' => (Token::LessThan, chars.as_str()),
@@ -60,6 +63,18 @@ impl Token {
                 '-' => (Token::Minus, chars.as_str()),
                 '*' => (Token::Star, chars.as_str()),
                 '(' => (Token::LParen, chars.as_str()),
+                '"' => {
+                    let mut string = String::new();
+                    while let Some(c) = chars.as_str().chars().next() {
+                        if c == '"' {
+                            chars.next();
+                            break;
+                        }
+                        string.push(c);
+                        chars.next();
+                    }
+                    (Token::String(string), chars.as_str())
+                }
                 ')' => (Token::RParen, chars.as_str()),
                 '/' => {
                     if let Some('/') = chars.as_str().chars().next() {

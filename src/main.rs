@@ -5,6 +5,9 @@ use std::io::{self, Write};
 #[command(author = "Dario Le Hy <dario.lehy@ik.me>", version = "1.0", about = "Frutta programming language CLI")]
 struct Args {
     input: Option<String>,
+    #[arg(short, long)]
+    #[arg(help = "Show the AST")]
+    ast: bool,
 }
 
 fn main() {
@@ -16,7 +19,9 @@ fn main() {
 
         // Assuming you have a parser and VM module
         let expr = parser::Parser::parse(&input);
-        println!("{:#?}", expr);
+        if args.ast {
+            println!("{:#?}", expr);
+        }
 
         let mut vm = vm::VM::new();
         if let Ok(expr) = expr {
