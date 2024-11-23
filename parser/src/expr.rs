@@ -7,6 +7,7 @@ use crate::{
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Number(f64),
+    Boolean(bool),
     Identifier(String),
     /// An Accessor is a way to access a value in a data structure.
     /// For example, in the expression `a.b.c`, `a` is the root, `b` is the first accessor, and `c` is the second accessor.
@@ -39,6 +40,36 @@ impl Parser {
 
     // Parsing functions
     pub fn parse_expr(&mut self) -> Result<Expr, Error> {
+        let mut lhs = self.parse_add_sub()?;
+        while let Some(op) = &self.current_token {
+            match op {
+                tokens::Token::Equal => {
+                    self.next_token();
+                    let rhs = self.parse_expr()?;
+                    lhs = self.binary_op(tokens::Token::Equal, lhs, rhs);
+                }
+                tokens::Token::NotEqual => {
+                    self.next_token();
+                    let rhs = self.parse_expr()?;
+                    lhs = self.binary_op(tokens::Token::NotEqual, lhs, rhs);
+                }
+                tokens::Token::LessThan => {
+                    self.next_token();
+                    let rhs = self.parse_expr()?;
+                    lhs = self.binary_op(tokens::Token::LessThan, lhs, rhs);
+                }
+                tokens::Token::GreaterThan => {
+                    self.next_token();
+                    let rhs = self.parse_expr()?;
+                    lhs = self.binary_op(tokens::Token::GreaterThan, lhs, rhs);
+                }
+                _ => break,
+            }
+        }
+        Ok(lhs)
+    }
+
+    pub fn parse_add_sub(&mut self) -> Result<Expr, Error> {
         let mut lhs = self.parse_term()?;
         while let Some(op) = &self.current_token {
             match op {
@@ -118,26 +149,33 @@ impl Parser {
             Some(tokens::Token::Identifier(id)) => {
                 self.next_token();
                 let id = id.clone();
-                Ok(Expr::Identifier(id))
+                match id.as_str() {
+                    "true" => Ok(Expr::Boolean(true)),
+                    "false" => Ok(Expr::Boolean(false)),
+                    _ => Ok(Expr::Identifier(id)),
+                }
             },
             Some(tokens::Token::LParen) => {
-                // TODO: Use a separate function for this
-                let l_par_pos = self.pos;
-                self.next_token();
-                let expr = self.parse_expr()?;
-                if self.current_token != Some(tokens::Token::RParen) {
-                    return Err(Error::new(
-                        errors::ErrorType::UnClosedParenthesis,
-                        l_par_pos,
-                        self.input.clone(),
-                    ));
-                }
-                self.next_token();
-                Ok(expr)
+                self.parse_paren()
             }
             None => Err(self.error(errors::ErrorType::UnexpectedEndOfFile)),
             _ => Err(self.error(errors::ErrorType::UnexpectedToken(self.current_token.clone().unwrap()))),
         }
+    }
+
+    pub fn parse_paren(&mut self) -> Result<Expr, Error> {
+        let l_par_pos = self.pos;
+        self.next_token();
+        let expr = self.parse_expr()?;
+        if self.current_token != Some(tokens::Token::RParen) {
+            return Err(Error::new(
+                errors::ErrorType::UnClosedParenthesis,
+                l_par_pos,
+                self.input.clone(),
+            ));
+        }
+        self.next_token();
+        Ok(expr)
     }
 }
 

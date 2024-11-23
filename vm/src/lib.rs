@@ -50,6 +50,34 @@ impl VM {
                         unimplemented!()
                     }
                 }));
+                methods.insert("Equal".to_string(), Function::Builtin(|args| {
+                    if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
+                        Value::Boolean(lhs == rhs)
+                    } else {
+                        unimplemented!()
+                    }
+                }));
+                methods.insert("NotEqual".to_string(), Function::Builtin(|args| {
+                    if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
+                        Value::Boolean(lhs != rhs)
+                    } else {
+                        unimplemented!()
+                    }
+                }));
+                methods.insert("GreaterThan".to_string(), Function::Builtin(|args| {
+                    if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
+                        Value::Boolean(lhs > rhs)
+                    } else {
+                        unimplemented!()
+                    }
+                }));
+                methods.insert("LessThan".to_string(), Function::Builtin(|args| {
+                    if let (Value::Number(lhs), Value::Number(rhs)) = (&args[0], &args[1]) {
+                        Value::Boolean(lhs < rhs)
+                    } else {
+                        unimplemented!()
+                    }
+                }));
                 methods
             },
         };
@@ -77,6 +105,7 @@ impl VM {
             }
             Statement::Fn { name, params, body } => {
                 let function = Function::UserDefined {
+                    name: name.clone(),
                     params,
                     body,
                 };
@@ -90,6 +119,26 @@ impl VM {
                 let value = self.eval_expr(expr);
                 return Some(value);
             }
+            Statement::If {
+                condition,
+                body,
+                else_body,
+            } => {
+                let condition = self.eval_expr(condition);
+                if let Value::Boolean(true) = condition {
+                    for statement in body {
+                        if let Some(return_value) = self.exec_statement(statement) {
+                            return Some(return_value);
+                        }
+                    }
+                } else {
+                    for statement in else_body {
+                        if let Some(return_value) = self.exec_statement(statement) {
+                            return Some(return_value);
+                        }
+                    }
+                }
+            }
             _ => unimplemented!(),
         }
         None
@@ -98,7 +147,9 @@ impl VM {
     fn eval_expr(&self, expr: Expr) -> Value {
         match expr {
             Expr::Number(n) => Value::Number(n),
+            Expr::Boolean(b) => Value::Boolean(b),
             Expr::Identifier(name) => {
+                
                 self.variables.get(&name).cloned().unwrap_or_else(|| panic!("Variable {} not found", name))
             }
             Expr::BinaryOp { op, lhs, rhs } => {
@@ -124,10 +175,15 @@ impl VM {
             (Value::Number(lhs), Value::Number(rhs)) => {
                 let class = self.classes.get("Number").unwrap();
                 let method_name = match op {
+                    // TODO: implement the magic methods into a enum
                     parser::tokens::Token::Plus => "Add",
                     parser::tokens::Token::Minus => "Sub",
                     parser::tokens::Token::Star => "Mul",
                     parser::tokens::Token::Divider => "Div",
+                    parser::tokens::Token::Equal => "Equal",
+                    parser::tokens::Token::NotEqual => "NotEqual",
+                    parser::tokens::Token::GreaterThan => "GreaterThan",
+                    parser::tokens::Token::LessThan => "LessThan",
                     _ => unimplemented!(),
                 };
                 let method = class.methods.get(method_name).unwrap();
@@ -141,6 +197,7 @@ impl VM {
 #[derive(Debug, Clone)]
 pub enum Value {
     Number(f64),
+    Boolean(bool),
     ClassInstance(ClassInstance),
     Function(Function),
 }
@@ -161,6 +218,7 @@ pub struct ClassInstance {
 pub enum Function {
     Builtin(fn(Vec<Value>) -> Value),
     UserDefined {
+        name: String,
         params: Vec<String>,
         body: Vec<Statement>,
     },
@@ -170,11 +228,13 @@ impl Function {
     pub fn call(&self, args: Vec<Value>) -> Value {
         match self {
             Function::Builtin(func) => func(args),
-            Function::UserDefined { params, body } => {
+            Function::UserDefined { name, params, body } => {
                 let mut vm = VM::new();
                 for (param, arg) in params.iter().zip(args.iter()) {
                     vm.variables.insert(param.clone(), arg.clone());
                 }
+                // Insert the function into the variables so it can be called recursively
+                vm.variables.insert(name.to_string(), Value::Function(self.clone()));
                 for statement in body {
                     if let Some(return_value) = vm.exec_statement(statement.clone()) {
                         return return_value;

@@ -14,10 +14,15 @@ pub enum Statement {
     Fn{
         name: String,
         params: Vec<String>,
-        body: Vec<Statement>,
+        body: Vec<Statement>
     },
     /// Variable assignment
     Assign(String, Expr),
+    If{
+        condition: Expr,
+        body: Vec<Statement>,
+        else_body: Vec<Statement>,
+    }
 }
 
 impl Parser {
@@ -38,6 +43,7 @@ impl Parser {
             "let" => self.parse_let(),
             "fn" => self.parse_fn(),
             "return" => self.parse_return(),
+            "if" => self.parse_if(),
             _ if matches!(self.next_token, Some(tokens::Token::Assign)) => {
                 self.parse_assign(key)
             }
@@ -63,6 +69,23 @@ impl Parser {
 
         let value = self.parse_expr()?;
         Ok(Statement::Let(name, value))
+    }
+
+    pub fn parse_if(&mut self) -> Result<Statement, Error> {
+        self.next_token();
+        let condition = self.parse_expr()?;
+        let body = self.parse_block()?;
+        let else_body = if self.current_token == Some(tokens::Token::Identifier("else".into())) {
+            self.next_token();
+            self.parse_block()?
+        } else {
+            Vec::new()
+        };
+        Ok(Statement::If {
+            condition,
+            body,
+            else_body,
+        })
     }
 
     pub fn parse_fn(&mut self) -> Result<Statement, Error> {

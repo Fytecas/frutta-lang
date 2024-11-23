@@ -18,6 +18,7 @@ pub enum Token {
     SemiColon,
     GreaterThan,
     LessThan,
+    NotEqual,
     Equal,
     Identifier(String),
 }
@@ -40,6 +41,14 @@ impl Token {
                         (Token::Equal, chars.as_str())
                     } else {
                         (Token::Assign, chars.as_str())
+                    }
+                },
+                '!' => {
+                    if let Some('=') = chars.as_str().chars().next() {
+                        chars.next();
+                        (Token::NotEqual, chars.as_str())
+                    } else {
+                        panic!("Unexpected character: {}", char)
                     }
                 },
                 '.' => (Token::Point, chars.as_str()),

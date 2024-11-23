@@ -4,15 +4,15 @@ fn main() {
     const INPUT: &str = r#"
     fn fib(n) {
         if n == 0 {
-            return 0;
+            return 0
         }
         if n == 1 {
-            return 1;
+            return 1
         }
-        return fib(n - 1) + fib(n - 2);
+        return fib(n - 1) + fib(n - 2)
     }
 
-    fib(10)
+    fib(20)
     "#;
     let start = Instant::now();
     let expr = parser::Parser::parse(INPUT);
