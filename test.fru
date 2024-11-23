@@ -1,9 +1,8 @@
-use sys
-
-i = 3
+i = 3.9
 
 fn test() {
-    sys.print(i)
+    Std.print(i*4)
 }
 
+test()
 test()

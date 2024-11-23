@@ -1,5 +1,8 @@
+pub mod std_;
+
 use parser::expr::Expr;
 use parser::statement::Statement;
+use std_::std_class;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -24,7 +27,8 @@ impl VM {
     fn init_builtin_classes(classes: &Rc<RefCell<HashMap<String, Class>>>) {
         let number_class = Class {
             name: "Number".to_string(),
-            methods: {
+            fields: HashMap::new(),
+            magics: {
                 let mut methods = HashMap::new();
                 methods.insert(
                     MagicMethod::Add,
@@ -112,7 +116,10 @@ impl VM {
         classes
             .borrow_mut()
             .insert("Number".to_string(), number_class);
-    }
+
+        let std_class = std_class();
+        classes.borrow_mut().insert(std_class.name.clone(), std_class);
+        }
 
     pub fn exec_statement(&mut self, stmt: Statement) -> Option<Rc<RefCell<Value>>> {
         match stmt {
@@ -123,11 +130,7 @@ impl VM {
             }
             Statement::Assign(name, expr) => {
                 let value = self.eval_expr(expr);
-                if self.variables.borrow().contains_key(&name) {
-                    self.variables.borrow_mut().insert(name, value);
-                } else {
-                    panic!("Variable {} not declared", name);
-                }
+                self.variables.borrow_mut().insert(name, value);
             }
             Statement::Fn { name, params, body } => {
                 let function = Function::UserDefined {
@@ -142,7 +145,7 @@ impl VM {
             }
             Statement::Expr(expr) => {
                 let value = self.eval_expr(expr);
-                println!("{:?}", value.borrow());
+                // println!("{:?}", value.borrow());
             }
             Statement::Return(expr) => {
                 let value = self.eval_expr(expr);
@@ -178,17 +181,44 @@ impl VM {
         match expr {
             Expr::Number(n) => Rc::new(RefCell::new(Value::Number(n))),
             Expr::Boolean(b) => Rc::new(RefCell::new(Value::Boolean(b))),
-            Expr::Identifier(name) => self
-                .variables
-                .borrow()
-                .get(&name)
-                .cloned()
-                .unwrap_or_else(|| panic!("Variable {} not found", name)),
+            Expr::Identifier(name) => {
+                self.variables
+                    .borrow()
+                    .get(&name)
+                    .cloned()
+                    .unwrap_or_else(|| {
+                        let classes = self.classes.borrow();
+                        let class = classes.get(&name).unwrap_or_else(|| panic!("Variable or class '{}' not found", name));
+                        Rc::new(RefCell::new(Value::ClassInstance(ClassInstance {
+                            name: class.name.clone(),
+                            fields: class.fields.clone(),
+                        })))
+                    })
+            },
             Expr::BinaryOp { op, lhs, rhs } => {
                 let lhs = self.eval_expr(*lhs);
                 let rhs = self.eval_expr(*rhs);
                 self.eval_binary_op(op, lhs, rhs)
             }
+            Expr::Acessor(accessors) => {
+                let mut iter = accessors.into_iter();
+                let origin = self.eval_expr(iter.next().unwrap());
+                
+                iter.fold(origin, |acc, accessor| {
+                    match &*acc.borrow() {
+                        Value::ClassInstance(instance) => {
+                            let field_name = match accessor {
+                                Expr::Identifier(name) => name,
+                                _ => panic!("Invalid accessor expression"),
+                            };
+                            instance.fields.get(&field_name)
+                                .cloned()
+                                .unwrap_or_else(|| panic!("Field '{}' not found", field_name))
+                        },
+                        _ => panic!("Attempted to access a field on a non-class instance value"),
+                    }
+                })
+            },
             Expr::Call(function, args) => {
                 let function = self.eval_expr(*function);
                 let args = args.into_iter().map(|arg| self.eval_expr(arg)).collect();
@@ -219,7 +249,7 @@ impl VM {
                     parser::tokens::Token::LessThan => MagicMethod::LessThan,
                     _ => unimplemented!(),
                 };
-                let method = class.methods.get(&method_name).expect(&format!(
+                let method = class.magics.get(&method_name).expect(&format!(
                     "Method '{:?}' not found in class 'Number'",
                     method_name
                 ));
@@ -248,6 +278,7 @@ pub enum MagicMethod {
 
 #[derive(Debug, Clone)]
 pub enum Value {
+    None,
     Number(f64),
     Boolean(bool),
     ClassInstance(ClassInstance),
@@ -257,7 +288,24 @@ pub enum Value {
 #[derive(Debug)]
 pub struct Class {
     name: String,
-    methods: HashMap<MagicMethod, Function>,
+    magics: HashMap<MagicMethod, Function>,
+    fields: HashMap<String, Rc<RefCell<Value>>>,
+}
+
+impl Class {
+    pub fn new(name: &str) -> Self {
+        Class {
+            name: name.to_string(),
+            magics: HashMap::new(),
+            fields: HashMap::new(),
+        }
+    }
+
+    pub fn add_method(&mut self, name: &str, function: fn(Vec::<Rc<RefCell<Value>>>) -> Value) {
+        let method = Function::Builtin(function);
+        let method = Rc::new(RefCell::new(Value::Function(method)));
+        self.fields.insert(name.to_string(), method);
+    }
 }
 
 #[derive(Debug, Clone)]

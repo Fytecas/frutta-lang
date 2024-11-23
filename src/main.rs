@@ -9,19 +9,9 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
+    let input_file = args.input.or_else(|| std::env::args().nth(1));
 
-    if let Some(input_file) = args.input {
-        let input = std::fs::read_to_string(input_file).expect("Failed to read input file");
-
-        // Assuming you have a parser and VM module
-        let expr = parser::Parser::parse(&input);
-        println!("{:#?}", expr);
-
-        let mut vm = vm::VM::new();
-        if let Ok(expr) = expr {
-            vm.exec_statement(expr);
-        }
-    } else if let Some(input_file) = std::env::args().nth(1) {
+    if let Some(input_file) = input_file {
         let input = std::fs::read_to_string(input_file).expect("Failed to read input file");
 
         // Assuming you have a parser and VM module
