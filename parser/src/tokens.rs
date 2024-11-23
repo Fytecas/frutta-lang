@@ -61,7 +61,19 @@ impl Token {
                 '*' => (Token::Star, chars.as_str()),
                 '(' => (Token::LParen, chars.as_str()),
                 ')' => (Token::RParen, chars.as_str()),
-                '/' => (Token::Divider, chars.as_str()),
+                '/' => {
+                    if let Some('/') = chars.as_str().chars().next() {
+                        while let Some(c) = chars.as_str().chars().next() {
+                            if c == '\n' {
+                                break;
+                            }
+                            chars.next();
+                        }
+                        continue;
+                    } else {
+                        (Token::Divider, chars.as_str())
+                    }
+                },
                 c if c.is_digit(10) => {
                     let mut num = String::new();
                     num.push(c);

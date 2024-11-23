@@ -7,7 +7,6 @@ use crate::{
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
-    Let(String, Expr),
     Return(Expr),
     Expr(Expr),
     Block(Vec<Statement>),
@@ -40,7 +39,6 @@ impl Parser {
 
     pub fn parse_identifier(&mut self, key: String) -> Result<Statement, Error> {
         match key.as_str() {
-            "let" => self.parse_let(),
             "fn" => self.parse_fn(),
             "return" => self.parse_return(),
             "if" => self.parse_if(),
@@ -49,26 +47,6 @@ impl Parser {
             }
             _ => self.parse_expr().map(Statement::Expr),
         }
-    }
-
-    pub fn parse_let(&mut self) -> Result<Statement, Error> {
-        self.next_token();
-        let name = if let Expr::Identifier(name) = self.parse_expr()? {
-            name
-        } else {
-            return Err(self.error(errors::ErrorType::ExpectedToken(tokens::Token::Identifier(
-                "".into(),
-            ))));
-        };
-
-        if self.current_token != Some(tokens::Token::Assign) {
-            return Err(self.error(errors::ErrorType::ExpectedToken(tokens::Token::Assign)));
-        }
-
-        self.next_token();
-
-        let value = self.parse_expr()?;
-        Ok(Statement::Let(name, value))
     }
 
     pub fn parse_if(&mut self) -> Result<Statement, Error> {
