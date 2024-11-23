@@ -116,7 +116,7 @@ impl VM {
             }
             Statement::Expr(expr) => {
                 let value = self.eval_expr(expr);
-                println!("{:?}", value);
+                
             }
             Statement::Return(expr) => {
                 let value = self.eval_expr(expr);
@@ -163,7 +163,7 @@ impl VM {
                 let function = self.eval_expr(*function);
                 if let Value::Function(function) = function {
                     let args = args.into_iter().map(|arg| self.eval_expr(arg)).collect();
-                    function.call(args, Rc::clone(&self.variables), Rc::clone(&self.classes))
+                    function.call(args, Rc::clone(&self.variables))
                 } else {
                     panic!("Attempted to call a non-function value");
                 }
@@ -190,7 +190,7 @@ impl VM {
                     _ => unimplemented!(),
                 };
                 let method = class.methods.get(method_name).expect(&format!("Method '{}' not found in class 'Number'", method_name));
-                method.call(vec![Value::Number(lhs), Value::Number(rhs)], Rc::clone(&self.variables), Rc::clone(&self.classes))
+                method.call(vec![Value::Number(lhs), Value::Number(rhs)], Rc::clone(&self.variables))
             }
             _ => unimplemented!(),
         }
@@ -229,7 +229,7 @@ pub enum Function {
 }
 
 impl Function {
-    pub fn call(&self, args: Vec<Value>, variables: Rc<RefCell<HashMap<String, Value>>>, classes: Rc<RefCell<HashMap<String, Class>>>) -> Value {
+    pub fn call(&self, args: Vec<Value>, variables: Rc<RefCell<HashMap<String, Value>>>) -> Value {
         match self {
             Function::Builtin(func) => func(args),
             Function::UserDefined { name, params, body, classes } => {

@@ -139,7 +139,7 @@ impl Parser {
 
     pub fn parse_factor(&mut self) -> Result<Expr, Error> {
         // TODO: Remove the clone here
-        println!("{:?}", self.current_token.clone());
+        
         match &self.current_token.clone() {
             Some(tokens::Token::Number(n)) => {
                 self.next_token();
