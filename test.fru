@@ -16,5 +16,6 @@ fn wait(n) {
 }
 
 hello()
-time()
+n = Time.now()
 wait(5)
+Std.print("Temps d'attente: ", Time.now()-n)
