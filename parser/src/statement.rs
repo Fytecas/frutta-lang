@@ -1,8 +1,7 @@
 use crate::{
     errors::{self, Error},
     expr::Expr,
-    tokens,
-    Parser,
+    tokens, Parser,
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -10,18 +9,18 @@ pub enum Statement {
     Return(Expr),
     Expr(Expr),
     Block(Vec<Statement>),
-    Fn{
+    Fn {
         name: String,
         params: Vec<String>,
-        body: Vec<Statement>
+        body: Vec<Statement>,
     },
     /// Variable assignment
     Assign(String, Expr),
-    If{
+    If {
         condition: Expr,
         body: Vec<Statement>,
         else_body: Vec<Statement>,
-    }
+    },
 }
 
 impl Parser {
@@ -42,9 +41,7 @@ impl Parser {
             "fn" => self.parse_fn(),
             "return" => self.parse_return(),
             "if" => self.parse_if(),
-            _ if matches!(self.next_token, Some(tokens::Token::Assign)) => {
-                self.parse_assign(key)
-            }
+            _ if matches!(self.next_token, Some(tokens::Token::Assign)) => self.parse_assign(key),
             _ => self.parse_expr().map(Statement::Expr),
         }
     }
@@ -94,7 +91,9 @@ impl Parser {
                         params.push(param.clone());
                         self.next_token();
                     } else {
-                        return Err(self.error(errors::ErrorType::ExpectedToken(tokens::Token::Comma)));
+                        return Err(
+                            self.error(errors::ErrorType::ExpectedToken(tokens::Token::Comma))
+                        );
                     }
                 }
                 Some(tokens::Token::Comma) => {
@@ -102,10 +101,9 @@ impl Parser {
                     continue;
                 }
                 Some(_) => {
-                    return Err(self.error(errors::ErrorType::ExpectedToken(tokens::Token::Identifier(
-                        "".into(),
+                    return Err(self.error(errors::ErrorType::ExpectedToken(
+                        tokens::Token::Identifier("".into()),
                     )))
-                    )
                 }
                 None => {
                     return Err(self.error(errors::ErrorType::UnexpectedEndOfFile));

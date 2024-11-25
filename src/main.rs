@@ -2,7 +2,11 @@ use clap::Parser;
 use std::io::{self, Write};
 
 #[derive(Parser, Debug)]
-#[command(author = "Dario Le Hy <dario.lehy@ik.me>", version = "1.0", about = "Frutta programming language CLI")]
+#[command(
+    author = "Dario Le Hy <dario.lehy@ik.me>",
+    version = "1.0",
+    about = "Frutta programming language CLI"
+)]
 struct Args {
     input: Option<String>,
     #[arg(short, long)]
@@ -25,7 +29,7 @@ fn main() {
 
         let mut vm = vm::VM::new();
         if let Ok(expr) = expr {
-            vm.exec_statement(expr);
+            vm.exec_statement(&expr);
         }
     } else {
         run_repl();
@@ -51,7 +55,7 @@ fn run_repl() {
         let expr = parser::Parser::parse(&input);
         match expr {
             Ok(expr) => {
-                vm.exec_statement(expr);
+                vm.exec_statement(&expr);
             }
             Err(e) => {
                 println!("Error: {:?}", e);

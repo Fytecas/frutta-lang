@@ -145,18 +145,18 @@ impl Parser {
 
     pub fn parse_factor(&mut self) -> Result<Expr, Error> {
         // TODO: Remove the clone here
-        
+
         match &self.current_token.clone() {
             Some(tokens::Token::Number(n)) => {
                 self.next_token();
                 let n = *n;
                 Ok(Expr::Number(n))
-            },
+            }
             Some(tokens::Token::String(s)) => {
                 self.next_token();
                 let s = s.clone();
                 Ok(Expr::String(s))
-            },
+            }
             Some(tokens::Token::Identifier(id)) => {
                 self.next_token();
                 let id = id.clone();
@@ -165,12 +165,12 @@ impl Parser {
                     "false" => Ok(Expr::Boolean(false)),
                     _ => Ok(Expr::Identifier(id)),
                 }
-            },
-            Some(tokens::Token::LParen) => {
-                self.parse_paren()
             }
+            Some(tokens::Token::LParen) => self.parse_paren(),
             None => Err(self.error(errors::ErrorType::UnexpectedEndOfFile)),
-            _ => Err(self.error(errors::ErrorType::UnexpectedToken(self.current_token.clone().unwrap()))),
+            _ => Err(self.error(errors::ErrorType::UnexpectedToken(
+                self.current_token.clone().unwrap(),
+            ))),
         }
     }
 
@@ -202,7 +202,8 @@ mod tests {
             pos: 0,
             current_token: None,
             next_token: None,
-        }.parse_expr()
+        }
+        .parse_expr()
     }
 
     #[test]
@@ -221,7 +222,6 @@ mod tests {
             })
         );
     }
-
 
     #[test]
     fn test_parse_multiplication() {

@@ -4,18 +4,18 @@ fn hello() {
 }
 
 fn time() {
-    Std.print("Il est actuellement ",  Time.now()/3600)
+    Std.print("Il est actuellement ",  Std.Time.now()/3600)
 }
 
 fn wait(n) {
     Std.print(n)
     if n > 0 {
-        Time.sleep(1)
+        Std.Time.sleep(1)
         wait(n-1)
     }
 }
 
 hello()
-n = Time.now()
+n = Std.Time.now()
 wait(5)
-Std.print("Temps d'attente: ", Time.now()-n)
+Std.print("Temps d'attente: ", Std.Time.now()-n)

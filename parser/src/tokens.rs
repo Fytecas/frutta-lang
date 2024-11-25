@@ -44,7 +44,7 @@ impl Token {
                     } else {
                         (Token::Assign, chars.as_str())
                     }
-                },
+                }
                 '!' => {
                     if let Some('=') = chars.as_str().chars().next() {
                         chars.next();
@@ -52,7 +52,7 @@ impl Token {
                     } else {
                         panic!("Unexpected character: {}", char)
                     }
-                },
+                }
                 '.' => (Token::Point, chars.as_str()),
                 '%' => (Token::Modulo, chars.as_str()),
                 '{' => (Token::LBrace, chars.as_str()),
@@ -88,7 +88,7 @@ impl Token {
                     } else {
                         (Token::Divider, chars.as_str())
                     }
-                },
+                }
                 c if c.is_digit(10) => {
                     let mut num = String::new();
                     num.push(c);
@@ -122,7 +122,8 @@ impl Token {
                 ' ' => continue,
                 '\n' => continue,
                 _ => panic!("Unexpected character: {}", char),
-            }.into();
+            }
+            .into();
         }
         None
     }
@@ -150,13 +151,22 @@ mod tests {
         assert_eq!(Token::tokenize_first("0.1"), Some((Token::Number(0.1), "")));
         assert_eq!(Token::tokenize_first(""), None);
 
-        assert_eq!(Token::tokenize_first(" 1+2"), Some((Token::Number(1.0), "+2")));
+        assert_eq!(
+            Token::tokenize_first(" 1+2"),
+            Some((Token::Number(1.0), "+2"))
+        );
         assert_eq!(Token::tokenize_first(" +2"), Some((Token::Plus, "2")));
         assert_eq!(Token::tokenize_first(" 2"), Some((Token::Number(2.0), "")));
         assert_eq!(Token::tokenize_first(" (abc"), Some((Token::LParen, "abc")));
         assert_eq!(Token::tokenize_first(" )"), Some((Token::RParen, "")));
-        assert_eq!(Token::tokenize_first(" abc"), Some((Token::Identifier("abc".to_string()), "")));
-        assert_eq!(Token::tokenize_first(" 0.1"), Some((Token::Number(0.1), "")));
+        assert_eq!(
+            Token::tokenize_first(" abc"),
+            Some((Token::Identifier("abc".to_string()), ""))
+        );
+        assert_eq!(
+            Token::tokenize_first(" 0.1"),
+            Some((Token::Number(0.1), ""))
+        );
         assert_eq!(Token::tokenize_first(" "), None);
     }
 }

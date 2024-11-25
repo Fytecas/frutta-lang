@@ -1,46 +1,103 @@
-use std::io::Write;
+use std::{cell::RefCell, io::Write, rc::Rc};
 
-use crate::{Class, Value};
+use crate::{
+    class::{Class, ClassInstance},
+    number::NumberInstance,
+    string::StringInstance,
+    Function, MagicMethod, Value,
+};
 
-pub fn std_class() -> Class {
-    let mut class = Class::new("Std");
+#[derive(Debug)]
+pub struct StdInstance;
 
-    class.add_method("print", |args| {
-        for arg in args {
-            print!("{}", arg.borrow());
+impl ClassInstance for StdInstance {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn get_field(&self, name: &str) -> Option<Rc<RefCell<Value>>> {
+        match name {
+            "print" => Some(Rc::new(RefCell::new(Value::Function(Function::Builtin(
+                |args| {
+                    for arg in args {
+                        print!("{}", arg.borrow());
+                    }
+                    println!();
+                    Value::None
+                },
+            ))))),
+            "input" => Some(Rc::new(RefCell::new(Value::Function(Function::Builtin(
+                |args| {
+                    let mut input = String::new();
+                    for arg in args {
+                        print!("{:}", arg.borrow());
+                    }
+                    std::io::stdout().flush().unwrap();
+                    std::io::stdin().read_line(&mut input).unwrap();
+                    Value::ClassInstance(Rc::new(StringInstance {
+                        value: input.trim().to_string(),
+                    }))
+                },
+            ))))),
+            "Time" => Some(Rc::new(RefCell::new(Value::ClassInstance(Rc::new(
+                TimeInstance,
+            ))))),
+            _ => None,
         }
-        println!();
-        Value::None
-    });
+    }
 
-    class.add_method("input", |args| {
-        let mut input = String::new();
-        for arg in args {
-            print!("{:}", arg.borrow());
-        }
-        std::io::stdout().flush().unwrap();
-        std::io::stdin().read_line(&mut input).unwrap();
-        Value::String(input.trim().to_string())
-    });
-
-    class
+    fn call_magic(&self, method: MagicMethod, args: Vec<Rc<RefCell<Value>>>) -> Rc<RefCell<Value>> {
+        unimplemented!()
+    }
 }
 
-pub fn time_class() -> Class {
-    let mut class = Class::new("Time");
+#[derive(Debug)]
+pub struct TimeClass;
 
-    class.add_method("now", |_| {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap();
-        Value::Number(now.as_secs_f64())
-    });
+impl Class for TimeClass {
+    fn create_instance(&self) -> Rc<dyn ClassInstance> {
+        Rc::new(TimeInstance)
+    }
+}
 
-    class.add_method("sleep", |args| {
-        let seconds = args[0].borrow().as_number().unwrap();
-        std::thread::sleep(std::time::Duration::from_secs_f64(seconds));
-        Value::None
-    });
+#[derive(Debug)]
+pub struct TimeInstance;
 
-    class
+impl ClassInstance for TimeInstance {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn get_field(&self, name: &str) -> Option<Rc<RefCell<Value>>> {
+        match name {
+            "now" => Some(Rc::new(RefCell::new(Value::Function(Function::Builtin(
+                |_| {
+                    let now = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap();
+                    Value::ClassInstance(Rc::new(NumberInstance {
+                        value: now.as_secs_f64(),
+                    }))
+                },
+            ))))),
+            "sleep" => Some(Rc::new(RefCell::new(Value::Function(Function::Builtin(
+                |args| {
+                    let seconds = args[0]
+                        .borrow()
+                        .to_owned()
+                        .as_any()
+                        .downcast_ref::<NumberInstance>()
+                        .unwrap()
+                        .value;
+                    std::thread::sleep(std::time::Duration::from_secs_f64(seconds));
+                    Value::None
+                },
+            ))))),
+            _ => None,
+        }
+    }
+
+    fn call_magic(&self, method: MagicMethod, args: Vec<Rc<RefCell<Value>>>) -> Rc<RefCell<Value>> {
+        unimplemented!()
+    }
 }

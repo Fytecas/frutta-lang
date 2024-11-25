@@ -2,9 +2,9 @@ use errors::Error;
 use statement::Statement;
 
 pub mod errors;
-pub mod tokens;
 pub mod expr;
 pub mod statement;
+pub mod tokens;
 
 /// The parser is responsible for transforming a sequence of tokens(your program) into an abstract syntax tree, which is a tree representation of the program.
 /// In this, we use a algorithm called recursive descent parsing, which is a top-down parsing technique that constructs a parse tree from the top and the input is read from left to right.
