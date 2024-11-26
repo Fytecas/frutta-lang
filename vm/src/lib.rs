@@ -11,7 +11,7 @@ use parser::statement::Statement;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std_::{StdInstance, TimeClass};
+use std_::StdInstance;
 
 pub struct VM {
     classes: Rc<RefCell<HashMap<String, Rc<dyn Class>>>>,
@@ -38,9 +38,6 @@ impl VM {
         classes
             .borrow_mut()
             .insert("Std".to_string(), Rc::new(StdClass));
-        classes
-            .borrow_mut()
-            .insert("Time".to_string(), Rc::new(TimeClass));
     }
 
     pub fn exec_statement(&mut self, stmt: &Statement) -> Option<Rc<RefCell<Value>>> {
@@ -135,13 +132,23 @@ impl VM {
 
                 iter.fold(origin, |acc, accessor| match &*acc.borrow() {
                     Value::ClassInstance(instance) => {
-                        let field_name = match accessor {
-                            Expr::Identifier(name) => name.clone(),
-                            _ => panic!("Invalid accessor expression"),
-                        };
-                        instance
-                            .get_field(&field_name)
-                            .unwrap_or_else(|| panic!("Field '{}' not found", field_name))
+                        if let Expr::Identifier(name) = accessor {
+                            instance
+                                .get_field(name)
+                                .unwrap_or_else(|| panic!("Field '{}' not found", name))
+                        } else if let Expr::Call(function, args) = accessor {
+                            // TODO use eval_expr instead
+                            let function = self.eval_expr(function);
+                            let args = args.iter().map(|arg| self.eval_expr(arg)).collect();
+                            let function_value = function.borrow();
+                            if let Value::Function(function) = &*function_value {
+                                function.call(args, Rc::clone(&self.variables))
+                            } else {
+                                panic!("Attempted to call a non-function value");
+                            }
+                        } else {
+                            panic!("Invalid accessor expression")
+                        }
                     }
                     _ => panic!("Attempted to access a field on a non-class instance value"),
                 })
@@ -237,9 +244,35 @@ impl Class for StdClass {
     }
 }
 
+#[derive(Clone)]
+pub struct BuiltinFunction {
+    func: Rc<dyn Fn(Vec<Rc<RefCell<Value>>>) -> Value>,
+}
+
+impl std::fmt::Debug for BuiltinFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<builtin function>")
+    }
+}
+
+impl BuiltinFunction {
+    pub fn new<F>(func: F) -> Self
+    where
+        F: Fn(Vec<Rc<RefCell<Value>>>) -> Value + 'static,
+    {
+        BuiltinFunction {
+            func: Rc::new(func),
+        }
+    }
+
+    pub fn call(&self, args: Vec<Rc<RefCell<Value>>>) -> Value {
+        (self.func)(args)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Function {
-    Builtin(fn(Vec<Rc<RefCell<Value>>>) -> Value),
+    Builtin(BuiltinFunction),
     UserDefined {
         name: String,
         params: Vec<String>,
@@ -255,7 +288,7 @@ impl Function {
         variables: Rc<RefCell<HashMap<String, Rc<RefCell<Value>>>>>,
     ) -> Rc<RefCell<Value>> {
         match self {
-            Function::Builtin(func) => Rc::new(RefCell::new(func(args))),
+            Function::Builtin(func) => Rc::new(RefCell::new(func.call(args))),
             Function::UserDefined {
                 name,
                 params,

@@ -41,7 +41,17 @@ impl ClassInstance for NumberInstance {
                 NumberInstance { value: self.value },
             )))))
         } else {
-            None
+            match name {
+                "abs" => {
+                    let value = self.value;
+                    Some(Rc::new(RefCell::new(Value::Function(crate::Function::Builtin(crate::BuiltinFunction::new(
+                        move |_args| {
+                            return Value::ClassInstance(Rc::new(NumberInstance::new(value.abs())));
+                        }
+                    ))))))
+                },
+                _ => None,
+            }
         }
     }
 

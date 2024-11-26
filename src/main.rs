@@ -26,6 +26,10 @@ fn main() {
         if args.ast {
             println!("{:#?}", expr);
         }
+        if let Err(e) = expr {
+            println!("Error: {:?}", e);
+            return;
+        }
 
         let mut vm = vm::VM::new();
         if let Ok(expr) = expr {

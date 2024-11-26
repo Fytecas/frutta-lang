@@ -5,4 +5,5 @@ edition = "2021"
 description = "A simple virtual machine for executing frutta language bytecode or AST(in interpreter mode)"
 
 [dependencies]
+chrono = "0.4.38"
 parser = {path = "../parser"}
