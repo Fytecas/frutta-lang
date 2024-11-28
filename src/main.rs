@@ -12,6 +12,9 @@ struct Args {
     #[arg(short, long)]
     #[arg(help = "Show the AST")]
     ast: bool,
+    #[arg(short, long)]
+    #[arg(help = "Show execution time")]
+    time: bool,
 }
 
 fn main() {
@@ -22,18 +25,27 @@ fn main() {
         let input = std::fs::read_to_string(input_file).expect("Failed to read input file");
 
         // Assuming you have a parser and VM module
+        let parse_start = std::time::Instant::now();
         let expr = parser::Parser::parse(&input);
         if args.ast {
             println!("{:#?}", expr);
         } else if let Err(e) = expr {
             println!("Error: {:?}", e);
+            if args.time {
+                println!("Parsing time: {:?}", parse_start.elapsed());
+            }
             return;
         }
 
         let mut vm = vm::VM::new();
 
+        let exec_start = std::time::Instant::now();
         if let Ok(expr) = expr {
             vm.exec_statement(&expr);
+            if args.time {
+                println!("Parsing time: {:?}", parse_start.elapsed());
+                println!("Execution time: {:?}", exec_start.elapsed());
+            }
         }
     } else {
         run_repl();
