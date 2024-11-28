@@ -25,13 +25,13 @@ fn main() {
         let expr = parser::Parser::parse(&input);
         if args.ast {
             println!("{:#?}", expr);
-        }
-        if let Err(e) = expr {
+        } else if let Err(e) = expr {
             println!("Error: {:?}", e);
             return;
         }
 
         let mut vm = vm::VM::new();
+
         if let Ok(expr) = expr {
             vm.exec_statement(&expr);
         }

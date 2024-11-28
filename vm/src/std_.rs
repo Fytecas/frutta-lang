@@ -137,7 +137,6 @@ impl ClassInstance for DatetimeInstance {
                             .clone();
                         let datetime = datetime;
                         let formatted = datetime.format(&format).to_string();
-                        println!("{} formatted with {}", formatted, format);
                         Value::ClassInstance(Rc::new(StringInstance { value: formatted }))
                     }),
                 )))))

@@ -129,6 +129,20 @@ impl Parser {
             self.next_token();
             lhs = Expr::Call(Box::new(lhs), args);
         }
+        if let Some(tokens::Token::Point) = &self.current_token {
+            self.next_token();
+            let rhs = self.parse_call()?;
+            if let Expr::Call(i, args) = rhs.clone() {
+                if let Expr::Call(i2, args2) = lhs.clone() {
+                    lhs = Expr::Call(Box::new(Expr::Acessor(vec![lhs, *i])), args);
+
+                } else {
+                    lhs = Expr::Acessor(vec![lhs, rhs]);
+                }
+            } else {
+                lhs = Expr::Acessor(vec![lhs, rhs]);
+            }
+        }
         Ok(lhs)
     }
 
