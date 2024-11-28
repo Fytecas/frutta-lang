@@ -8,6 +8,7 @@ use std::io::{self, Write};
     about = "Frutta programming language CLI"
 )]
 struct Args {
+    #[arg(help = "Input file")]
     input: Option<String>,
     #[arg(short, long)]
     #[arg(help = "Show the AST")]
