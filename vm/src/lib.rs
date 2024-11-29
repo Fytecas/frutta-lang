@@ -183,12 +183,10 @@ impl VM {
             parser::tokens::Token::LessThan => MagicMethod::LessThan,
             _ => unimplemented!(),
         };
-        let lhs_value = lhs.borrow().clone();
-        let rhs_value = rhs.borrow().clone();
 
-        match (&lhs_value, &rhs_value) {
+        match (&*lhs.borrow(), &*rhs.borrow()) {
             (Value::ClassInstance(lhs_instance), Value::ClassInstance(_)) => {
-                lhs_instance.call_magic(magic, vec![lhs, rhs])
+                lhs_instance.call_magic(magic, vec![Rc::clone(&lhs), Rc::clone(&rhs)])
             }
             _ => unimplemented!(),
         }
