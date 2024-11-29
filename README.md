@@ -11,6 +11,11 @@ Frutta is a scripting language that is designed to be easy to use and understand
 The easiest way to install Frutta is with cargo, the Rust package manager.
 It is not yet published on crates.io, so you will have to install it from the git repository (I will publish it on crates.io when it will be more stable and useable).
 
+If you are on windows, it is highly recommended to use [WSL](https://learn.microsoft.com/fr-fr/windows/wsl/) (don't worry, it's easy to use)
+
+Firstly, you need to [install rust](https://www.rust-lang.org/tools/install).
+
+
 ```bash
 cargo install --git https://github.com/Fytecas/frutta-lang.git
 ```
@@ -39,7 +44,7 @@ For more information, you can run `frutta --help`.
 
 ## Syntax
 
-Frutta is a class-based language, it is inspired by Python and Wren.
+Frutta is a object-oriented programming language, it is inspired by Python and Wren.
 
 ### Comments
 
